@@ -12,6 +12,7 @@ from configs import configure_argument_parser, configure_logging
 from outputs import control_output
 from utils import get_response, find_tag
 
+
 def whats_new(session):
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     response = get_response(session, whats_new_url)
@@ -20,7 +21,8 @@ def whats_new(session):
     soup = BeautifulSoup(response.text, features='lxml')
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
     div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
-    sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
+    sections_by_python = div_with_ul.find_all('li',
+                                              attrs={'class': 'toctree-l1'})
 
     result = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(sections_by_python):
@@ -37,6 +39,7 @@ def whats_new(session):
             (version_link, h1.text, dl_text)
         )
     return result
+
 
 def latest_versions(session):
     response = get_response(session, MAIN_DOC_URL)
@@ -68,14 +71,16 @@ def latest_versions(session):
         )
     return results
 
+
 def download(session):
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     response = get_response(session, downloads_url)
     if response is None:
         return
     soup = BeautifulSoup(response.text, features='lxml')
-    table_tag = find_tag(soup, 'table', attrs={'class' : 'docutils'})
-    pdf_a4_tag = find_tag(table_tag, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')})
+    table_tag = find_tag(soup, 'table', attrs={'class': 'docutils'})
+    pdf_a4_tag = find_tag(table_tag, 'a',
+                          {'href': re.compile(r'.+pdf-a4\.zip$')})
     pdf_a4_link = pdf_a4_tag['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
     filename = archive_url.split('/')[-1]
@@ -87,7 +92,6 @@ def download(session):
     with open(archive_path, 'wb') as file:
         file.write(response.content)
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
-
 
 
 def pep(session):
@@ -113,7 +117,8 @@ def pep(session):
             return
 
         soup = BeautifulSoup(response.text, features='lxml')
-        dl_tag = find_tag(soup, 'dl', attrs={'class' : 'rfc2822 field-list simple'})
+        dl_tag = find_tag(soup, 'dl',
+                          attrs={'class': 'rfc2822 field-list simple'})
         status_title = dl_tag.find(string="Status").parent
         status = status_title.find_next_sibling("dd").text
         results.append(status)
@@ -125,7 +130,9 @@ def pep(session):
     final.append(head)
 
     for status, count in counter.items():
-        if status not in [value for sublist in list(EXPECTED_STATUS.values()) for value in sublist]:
+        if status not in [
+            value for sublist in list(
+                EXPECTED_STATUS.values()) for value in sublist]:
             logging.info(
                 f'Несовпадающие статусы:\n'
                 f'Статус в карточке: {status}\n')
@@ -139,14 +146,12 @@ def pep(session):
     return final
 
 
-
 MODE_TO_FUNCTION = {
     'whats-new': whats_new,
     'latest-versions': latest_versions,
     'download': download,
-    'pep' : pep,
+    'pep': pep,
 }
-
 
 
 def main():
