@@ -26,7 +26,7 @@ def whats_new(session):
 
     result = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(sections_by_python):
-        version_a_tag = section.find('a')
+        version_a_tag = find_tag(section, 'a')
         version_link = urljoin(whats_new_url, version_a_tag['href'])
         response = get_response(session, version_link)
         if response is None:
@@ -87,7 +87,9 @@ def download(session):
     downloads_dir = BASE_DIR / 'downloads'
     downloads_dir.mkdir(exist_ok=True)
     archive_path = downloads_dir / filename
-    response = session.get(archive_url)
+    response = get_response(session, archive_url)
+    if response is None:
+        return
 
     with open(archive_path, 'wb') as file:
         file.write(response.content)
@@ -107,6 +109,8 @@ def pep(session):
     table_tbody = find_tag(table_index, 'tbody')
     results = []
     table_tag = table_tbody.find_all('td', string=re.compile(r'^\d+$'))
+    all_values = set(
+        value for values in EXPECTED_STATUS.values() for value in values)
 
     for tag in table_tag:
         a_tag = find_tag(tag, 'a')
@@ -114,31 +118,24 @@ def pep(session):
         response = get_response(session, pep_info_url)
         response.encoding = 'utf-8'
         if response is None:
-            return
+            continue
 
         soup = BeautifulSoup(response.text, features='lxml')
         dl_tag = find_tag(soup, 'dl',
                           attrs={'class': 'rfc2822 field-list simple'})
-        status_title = dl_tag.find(string="Status").parent
-        status = status_title.find_next_sibling("dd").text
-        results.append(status)
+        status_title = dl_tag.find(string='Status').parent
+        status = status_title.find_next_sibling('dd').text
+        if status in all_values:
+            results.append(status)
 
-    total = 0
     counter = Counter(results)
     head = ('Status', 'Amount')
+    total = sum(counter.values())
     final = []
     final.append(head)
 
     for status, count in counter.items():
-        if status not in [
-            value for sublist in list(
-                EXPECTED_STATUS.values()) for value in sublist]:
-            logging.info(
-                f'Несовпадающие статусы:\n'
-                f'Статус в карточке: {status}\n')
-        else:
-            final.append((status, count))
-            total += count
+        final.append((status, count))
 
     foot = ('Total', total)
     final.append(foot)
