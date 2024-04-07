@@ -130,11 +130,11 @@ def pep(session):
 
     counter = Counter(results)
     total = sum(counter.values())
-    final = [('Status', 'Amount')]
-    final.extend(counter.items())
-    final.append(('Total', total))
-
-    return final
+    return [
+        ('Status', 'Amount'),
+        *counter.items(),
+        ('Total', sum(counter.values())),
+     ]
 
 
 MODE_TO_FUNCTION = {
