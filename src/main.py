@@ -129,7 +129,6 @@ def pep(session):
             results.append(status)
 
     counter = Counter(results)
-    total = sum(counter.values())
     return [
         ('Status', 'Amount'),
         *counter.items(),
