@@ -129,16 +129,10 @@ def pep(session):
             results.append(status)
 
     counter = Counter(results)
-    head = ('Status', 'Amount')
     total = sum(counter.values())
-    final = []
-    final.append(head)
-
-    for status, count in counter.items():
-        final.append((status, count))
-
-    foot = ('Total', total)
-    final.append(foot)
+    final = [('Status', 'Amount')]
+    final.extend(counter.items())
+    final.append(('Total', total))
 
     return final
 
